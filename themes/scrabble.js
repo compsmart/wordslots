@@ -103,32 +103,32 @@ export const SCRABBLE_THEME = {
             }
         }
     },    // Render symbol function - custom tile rendering for Scrabble letters
-    renderSymbol: function(ctx, symbol, x, y, width, height, options) {
+    renderSymbol: function (ctx, symbol, x, y, width, height, options) {
         //console.log(`Rendering symbol: ${symbol.letter} at (${x},${y}) with dimensions ${width}x${height}`);
-        
+
         // Draw plain colored background
         ctx.fillStyle = "#e8d0aa";  // Scrabble tile color
         ctx.fillRect(x, y, width, height);
-        
+
         // Add border
         ctx.strokeStyle = "#9e7e4f"; // Darker border
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
-        
+
         // Draw the letter
         ctx.fillStyle = "#333333";
         ctx.font = `bold ${Math.floor(height * 0.6)}px Arial, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(symbol.letter, x + width / 2, y + height / 2);
-        
+
         // Draw the score value
         ctx.fillStyle = "#333333";
         ctx.font = `bold ${Math.floor(height * 0.25)}px Arial, sans-serif`;
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
         ctx.fillText(symbol.value.toString(), x + width - 6, y + height - 4);
-        
+
         return true; // Signal that we're handling the rendering
     },
 

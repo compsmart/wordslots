@@ -1360,12 +1360,12 @@ function spinReels() {
     balance -= betAmount;
     updateBalanceDisplay();
 
-    // Clear any previous winning word definitions
+    // Hide word definitions when spinning starts
     winningWordsWithDefs = [];
-    currentDefinitionIndex = 0;
     definitionOpacity = 0;
-    definitionFadeState = 'in';
-    
+    definitionFadeState = 'out';
+    definitionChangeTime = performance.now();
+
     spinning = true;
     winningLines = [];
     winAnimationActive = false;
