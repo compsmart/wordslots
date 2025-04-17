@@ -90,6 +90,17 @@ let showPaytable = false; // Track if paytable modal should be visible
 let paytableScrollY = 0; // Track scroll position for paytable
 const paytableScrollSpeed = 20; // Pixels per mouse wheel delta
 
+// Word definitions variables
+let wordDefinitions = {}; // Dictionary to store word definitions
+let winningWordsWithDefs = []; // Array to store winning words with their definitions
+let currentDefinitionIndex = 0; // Current word being displayed
+let definitionChangeTime = 0; // Time to change to next definition
+const DEFINITION_DISPLAY_TIME = 5000; // Time to display each definition (ms)
+let definitionOpacity = 0; // For fade effect
+let definitionFadeState = 'in'; // 'in', 'visible', 'out'
+const FADE_DURATION = 800; // Time for fade in/out (ms)
+const VISIBLE_DURATION = DEFINITION_DISPLAY_TIME - (FADE_DURATION * 2); // Time fully visible
+
 // Create a variable to store the spin sound source
 let spinSoundSource = null;
 
@@ -133,6 +144,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Loading word dictionary for Scrabble Slots...');
     const wordCount = await loadValidWords();
     console.log(`Loaded ${wordCount} words for Scrabble Slots`);
+
+    // Load word definitions
+    console.log('Loading word definitions for display...');
+    await loadWordDefinitions();
 
     // Setup UI elements
     // ...existing code...
@@ -203,13 +218,21 @@ function initGame() {
         initReels();
         console.log("[DEBUG] initGame - Reels initialized.");
 
-        // 4. Update displays
+        // 4. Load word definitions
+        console.log("[DEBUG] initGame - Loading word definitions...");
+        loadWordDefinitions().then(() => {
+            console.log("[DEBUG] initGame - Word definitions loaded successfully.");
+        }).catch(error => {
+            console.warn("Warning: Failed to load word definitions:", error);
+        });
+
+        // 5. Update displays
         console.log("[DEBUG] initGame - Updating balance/bet displays...");
         updateBalanceDisplay();
         updateBetDisplay(); // Also calls populatePaytable
 
-        // 5. Start the game loop
-        console.log("[DEBUG] initGame - Starting game loop (requestAnimationFrame)..."); // <-- Log before final step
+        // 6. Start the game loop
+        console.log("[DEBUG] initGame - Starting game loop (requestAnimationFrame)...");// <-- Log before final step
         requestAnimationFrame(drawGame);
         console.log("[DEBUG] initGame - Game loop requested.");
 
@@ -701,6 +724,9 @@ function drawGame(timestamp) {
     if (isPlayingEpicWinAnimation) {
         drawEpicWinAnimation(timestamp - epicWinStartTime, deltaTime);
     }
+
+    // Draw word definitions with transitions
+    drawWordDefinition(timestamp);
 
     requestAnimationFrame(drawGame);
 }
@@ -1334,6 +1360,12 @@ function spinReels() {
     balance -= betAmount;
     updateBalanceDisplay();
 
+    // Clear any previous winning word definitions
+    winningWordsWithDefs = [];
+    currentDefinitionIndex = 0;
+    definitionOpacity = 0;
+    definitionFadeState = 'in';
+    
     spinning = true;
     winningLines = [];
     winAnimationActive = false;
@@ -1663,15 +1695,20 @@ function checkWin() {
     } catch (e) {
         console.error("[DEBUG] checkWin - Error stringifying final winningLines:", e);
         console.log("[DEBUG] checkWin - Raw final winningLines:", winningLines);
-    }
+    } if (totalWinAmount > 0) {
+        // Collect all the winning words for definitions display
+        const winningWords = winningLines.map(line => line.symbolName);
+        // Update the definitions to display
+        updateWinningWordDefinitions(winningWords);
 
-    if (totalWinAmount > 0) {
         return {
             totalAmount: totalWinAmount,
             bestMatch: bestMatchDetails,
             allLines: winningLines
         };
     } else {
+        // Clear any existing word definitions
+        winningWordsWithDefs = [];
         return null; // No valid words found or no win
     }
 }
@@ -1992,10 +2029,6 @@ function handleModalInteractions(mouseX, mouseY) {
         const scrollBarX = modalX + modalWidth - scrollBarWidth - 15;
         const scrollBarY = modalY + 80;
         const scrollBarHeight = visibleHeight;
-
-        // Scrollbar thumb dimensions
-        const thumbRatio = visibleHeight / totalContentHeight;
-        const thumbHeight = Math.max(30, scrollBarHeight * thumbRatio);
 
         // Check if click is in scrollbar area
         if (isMouseOver(mouseX, mouseY, scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight)) {
@@ -3019,7 +3052,7 @@ function drawHistoryModal() {
         }
 
         // Only draw Next button if not on last page
-        if (historyCurrentPage < totalPages - 1) {
+        if (historyCurrentPage < totalPages - 1 && historyCurrentPage < totalPages - 1 && isMouseOver(mouseX, mouseY, nextBtnX, pageBtnY, pageBtnWidth, pageBtnHeight)) {
             ctx.fillStyle = '#444444';
             ctx.fillRect(nextBtnX, pageBtnY, pageBtnWidth, pageBtnHeight);
             ctx.strokeStyle = '#888888';
@@ -3722,4 +3755,142 @@ function applyWinEffects(ctx, winningLine, timestamp) {
             }
         }
     }
+}
+
+// Function to load word definitions from the definitions file
+async function loadWordDefinitions() {
+    try {
+        // Use XMLHttpRequest which is more widely supported
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', './words/definitions', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const text = xhr.responseText;
+
+                        // Parse the definitions file
+                        const lines = text.split('\n');
+                        lines.forEach(line => {
+                            if (line.trim() === '') return; // Skip empty lines
+
+                            // Extract word and definition
+                            const colonIndex = line.indexOf(':');
+                            if (colonIndex > 0) {
+                                const word = line.substring(0, colonIndex).trim().toLowerCase();
+                                const definition = line.substring(colonIndex + 1).trim();
+                                wordDefinitions[word] = definition;
+                            }
+                        });
+
+                        console.log(`Loaded ${Object.keys(wordDefinitions).length} word definitions`);
+                        resolve();
+                    } else {
+                        console.error('Failed to load definitions:', xhr.status);
+                        reject(new Error(`Failed to load definitions: ${xhr.status}`));
+                    }
+                }
+            };
+            xhr.send();
+        });
+    } catch (error) {
+        console.error('Error loading word definitions:', error);
+    }
+}
+
+// Update winning words with their definitions
+function updateWinningWordDefinitions(words) {
+    winningWordsWithDefs = [];
+
+    if (!words || words.length === 0) return;
+
+    words.forEach(word => {
+        const wordLower = word.toLowerCase();
+        if (wordDefinitions[wordLower]) {
+            winningWordsWithDefs.push({
+                word: word,
+                definition: wordDefinitions[wordLower]
+            });
+        } else {
+            // If no definition found, still show the word
+            winningWordsWithDefs.push({
+                word: word,
+                definition: "(no definition available)"
+            });
+        }
+    });
+
+    // Reset to the first word
+    currentDefinitionIndex = 0;
+    definitionOpacity = 0;
+    definitionFadeState = 'in';
+    definitionChangeTime = performance.now() + FADE_DURATION;
+}
+
+// Draw current word definition with fade transitions
+function drawWordDefinition(timestamp) {
+    if (winningWordsWithDefs.length === 0) return;
+
+    const currentTime = timestamp || performance.now();
+    const currentDef = winningWordsWithDefs[currentDefinitionIndex];
+
+    // Handle fade transitions
+    if (definitionFadeState === 'in' && currentTime >= definitionChangeTime) {
+        // Finished fading in, now stay visible
+        definitionOpacity = 1;
+        definitionFadeState = 'visible';
+        definitionChangeTime = currentTime + VISIBLE_DURATION;
+    } else if (definitionFadeState === 'in') {
+        // Still fading in
+        definitionOpacity = Math.min(1, (currentTime - (definitionChangeTime - FADE_DURATION)) / FADE_DURATION);
+    } else if (definitionFadeState === 'visible' && currentTime >= definitionChangeTime) {
+        // Finished being visible, start fading out
+        definitionFadeState = 'out';
+        definitionChangeTime = currentTime + FADE_DURATION;
+    } else if (definitionFadeState === 'out' && currentTime >= definitionChangeTime) {
+        // Finished fading out, move to next word
+        definitionOpacity = 0;
+        definitionFadeState = 'in';
+        currentDefinitionIndex = (currentDefinitionIndex + 1) % winningWordsWithDefs.length;
+        definitionChangeTime = currentTime + FADE_DURATION;
+    } else if (definitionFadeState === 'out') {
+        // Still fading out
+        definitionOpacity = Math.max(0, 1 - (currentTime - (definitionChangeTime - FADE_DURATION)) / FADE_DURATION);
+    }
+
+    // Only draw if there's some opacity
+    if (definitionOpacity <= 0) return;
+
+    // Position above the bet buttons
+    const defX = canvas.width / 2;
+    const defY = canvas.height - 140;
+    const maxWidth = canvas.width - 100;
+    // Draw with current opacity
+    ctx.save();
+    ctx.globalAlpha = definitionOpacity;
+    ctx.fillStyle = "#ffffff"; // Set text color to white
+    ctx.font = "16px Arial"; // Make text 1pt smaller (default was 16px)
+    // Create combined text with word and definition on the same line
+    const combinedText = currentDef.word.toUpperCase() + ": " + currentDef.definition;
+
+    // Handle potential line wrapping for the combined text
+    const words = combinedText.split(' ');
+    let line = '';
+    let lineY = defY;
+
+    for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+
+        if (metrics.width > maxWidth && i > 0) {
+            ctx.fillText(line, defX, lineY);
+            line = words[i] + ' ';
+            lineY += 24;
+        } else {
+            line = testLine;
+        }
+    }
+    ctx.fillText(line, defX, lineY);
+
+    ctx.restore();
 }
