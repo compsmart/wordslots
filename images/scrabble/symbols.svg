@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+  <!-- Common letter tile background -->
+  <defs>
+    <g id="letter-tile-bg">
+      <rect x="5" y="5" width="90" height="90" rx="4" fill="#e8d0aa" stroke="#9e7e4f" stroke-width="2"/>
+    </g>
+  </defs>
+  
+  <!-- Letter A -->
+  <symbol id="letter-A" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">A</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter B -->
+  <symbol id="letter-B" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">B</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">3</text>
+  </symbol>
+
+  <!-- Letter C -->
+  <symbol id="letter-C" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">C</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">3</text>
+  </symbol>
+
+  <!-- Letter D -->
+  <symbol id="letter-D" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">D</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">2</text>
+  </symbol>
+
+  <!-- Letter E -->
+  <symbol id="letter-E" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">E</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter F -->
+  <symbol id="letter-F" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">F</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">4</text>
+  </symbol>
+
+  <!-- Letter G -->
+  <symbol id="letter-G" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">G</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">2</text>
+  </symbol>
+
+  <!-- Letter H -->
+  <symbol id="letter-H" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">H</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">4</text>
+  </symbol>
+
+  <!-- Letter I -->
+  <symbol id="letter-I" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">I</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter J -->
+  <symbol id="letter-J" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">J</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">8</text>
+  </symbol>
+
+  <!-- Letter K -->
+  <symbol id="letter-K" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">K</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">5</text>
+  </symbol>
+
+  <!-- Letter L -->
+  <symbol id="letter-L" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">L</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter M -->
+  <symbol id="letter-M" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">M</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">3</text>
+  </symbol>
+
+  <!-- Letter N -->
+  <symbol id="letter-N" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">N</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter O -->
+  <symbol id="letter-O" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">O</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter P -->
+  <symbol id="letter-P" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">P</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">3</text>
+  </symbol>
+
+  <!-- Letter Q -->
+  <symbol id="letter-Q" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">Q</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">10</text>
+  </symbol>
+
+  <!-- Letter R -->
+  <symbol id="letter-R" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">R</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter S -->
+  <symbol id="letter-S" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">S</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter T -->
+  <symbol id="letter-T" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">T</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter U -->
+  <symbol id="letter-U" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">U</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1</text>
+  </symbol>
+
+  <!-- Letter V -->
+  <symbol id="letter-V" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">V</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">4</text>
+  </symbol>
+
+  <!-- Letter W -->
+  <symbol id="letter-W" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">W</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">4</text>
+  </symbol>
+
+  <!-- Letter X -->
+  <symbol id="letter-X" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">X</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">8</text>
+  </symbol>
+
+  <!-- Letter Y -->
+  <symbol id="letter-Y" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">Y</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">4</text>
+  </symbol>
+
+  <!-- Letter Z -->
+  <symbol id="letter-Z" viewBox="0 0 100 100">
+    <use xlink:href="#letter-tile-bg"/>
+    <text x="50" y="65" font-family="Arial" font-size="45" font-weight="bold" text-anchor="middle" fill="#333">Z</text>
+    <text x="80" y="30" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">10</text>
+  </symbol>
+</svg>
