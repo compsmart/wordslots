@@ -47,9 +47,9 @@ export const symbolNumberMultipliers = {
 // --- Word Length Multiplier Rules ---
 // Adjusts the base multiplier based on word length
 export const PAYOUT_RULES = {
-    3: 1,    // 3-letter words get base multiplier
-    4: 1,  // 4-letter words get 1.5x multiplier
-    5: 1   // 5-letter words get 2x multiplier
+    3: 0.01,
+    4: 0.01,
+    5: 0.1
 };
 
 // For Scrabble Slots, instead of predefined paylines, we'll be looking for words
@@ -93,7 +93,7 @@ export const themeSpecific = {
         dictionaryFlip: true
     },
     letterEffects: {
-        enabled: true,
+        enabled: false,
         tileColor: '#e8d0aa', // Light wooden color
         letterColor: '#333333', // Dark text
         borderColor: '#9e7e4f', // Darker wood border
@@ -101,7 +101,7 @@ export const themeSpecific = {
         tileSize: 80 // Size of the letter tiles
     },
     boardStyle: {
-        enabled: true,
+        enabled: false,
         backgroundColor: '#2e7d32', // Classic Scrabble board green
         gridColor: '#255c28', // Darker green for grid lines
         bonusColors: {
@@ -112,7 +112,7 @@ export const themeSpecific = {
         }
     },
     wordAnimation: {
-        enabled: true,
+        enabled: false,
         glowColor: '#ffdf00', // Gold
         intensity: 0.8,
         pulseSpeed: 1500,

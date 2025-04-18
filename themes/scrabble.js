@@ -191,17 +191,47 @@ export const SCRABBLE_THEME = {
             ctx.textBaseline = "middle";
             ctx.fillText(square.text, x + gridSpacing / 2, y + gridSpacing / 2);
         });
+    },    // Custom render function for epic win animation    // Store the epic background image so it only needs to be loaded once
+    epicBackgroundImage: null,
+
+    // Initialize the background image
+    initEpicBackground: function () {
+        if (!this.epicBackgroundImage) {
+            this.epicBackgroundImage = new Image();
+            this.epicBackgroundImage.src = "images/scrabble/epic_bg.jpg";
+        }
+        return this.epicBackgroundImage;
     },
 
-    // Custom render function for epic win animation
     renderEpicWinAnimation: function (ctx, canvas, elapsed, deltaTime, winAmount) {
+        // Make sure background image is initialized
+        const backgroundImage = this.initEpicBackground();
+
         // Calculate animation progress
         const duration = 6000;
         const progress = Math.min(elapsed / duration, 1.0);
 
-        // Fill background with Scrabble green
-        ctx.fillStyle = "#2e7d32";
+        // Clear everything first
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Add a solid black background first to ensure nothing shows through
+        ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the background image if it's loaded
+        if (backgroundImage.complete) {
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        } else {
+            // Fallback to green background if image isn't loaded yet
+            ctx.fillStyle = "#2e7d32";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set up the onload to trigger a repaint when the image loads
+            backgroundImage.onload = () => {
+                // This will make sure the image appears as soon as it's loaded
+                requestAnimationFrame(() => { });
+            };
+        }
 
         // Draw flying letter tiles
         const numTiles = 50;
@@ -250,10 +280,10 @@ export const SCRABBLE_THEME = {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("WORD JACKPOT!", canvas.width / 2, canvas.height * 0.3);
-        ctx.restore();
-
-        // Draw win amount with growing effect
+        ctx.restore();        // Draw win amount with growing effect
         const amountSize = Math.min(60 + progress * 40, 100) * pulse;
+        // Round the win amount to whole number
+        const roundedWinAmount = Math.round(winAmount);
 
         ctx.save();
         ctx.fillStyle = "#ffffff";
@@ -262,7 +292,7 @@ export const SCRABBLE_THEME = {
         ctx.font = `bold ${amountSize}px Arial`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(`${winAmount} CREDITS`, canvas.width / 2, canvas.height * 0.7);
+        ctx.fillText(`${roundedWinAmount} CREDITS`, canvas.width / 2, canvas.height * 0.7);
         ctx.restore();
     }
 };

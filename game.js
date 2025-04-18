@@ -176,6 +176,12 @@ function initGame() {
     themeSwitcherElement = document.getElementById('themeSwitcher');
     console.log("[DEBUG] initGame - DOM elements retrieved.");
 
+    //load background.jpg
+    const backgroundImage = new Image();
+    backgroundImage.src = 'images/scrabble/background.jpg';
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+
     // Load sound effects
     console.log("[DEBUG] initGame - Loading sounds...");
     loadSounds(); // Assuming this doesn't block indefinitely
@@ -278,7 +284,7 @@ function validateConfiguration() {
     }
     if (!PAYOUT_RULES || !PAYOUT_RULES[3] || !PAYOUT_RULES[4] || !PAYOUT_RULES[5]) {
         console.error("Config Error: PAYOUT_RULES are missing or incomplete (need entries for 3, 4, 5).");
-        isValid = false;
+        //isValid = false;
     }
 
     return isValid;
@@ -699,7 +705,8 @@ function drawGame(timestamp) {
     // const clampedDeltaTime = Math.min(deltaTime, maxDeltaTime);
     // Use clampedDeltaTime for physics/animation updates if needed
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height); drawBackground(timestamp); // Draw static or animated background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground(timestamp); // Draw static or animated background
     drawReels(deltaTime, timestamp); // Update and draw reels, passing timestamp for effects
     drawReelMask(); // Draw mask/overlay over reels if needed
 
@@ -734,6 +741,7 @@ function drawGame(timestamp) {
 // --- Drawing Functions ---
 // ... (drawBackground, drawReels, drawReelMask functions remain the same) ...
 function drawBackground(timestamp) {
+
     // Check if current theme has visual effects enabled
     const themeEffects = THEMES[currentThemeName]?.visualEffects;
     const effectsEnabled = themeEffects?.enabled !== false;
@@ -1371,6 +1379,14 @@ function spinReels() {
     winAnimationActive = false;
     confettiParticles = [];
     buttonEffects.spin.pressed = false;
+
+    // Shuffle each reel's symbols before spinning
+    setTimeout(() => {
+        for (let i = 0; i < REEL_COUNT; i++) {
+            reels[i].symbols = shuffleArray(reels[i].symbols);
+        }
+    }, 1000); // Shuffle immediately
+
 
     let maxDuration = 0;
     let spinStartTime = Date.now();
@@ -2885,14 +2901,16 @@ function drawPaytableModal() {
         }
     });
 
-    // Draw letter value calculation
-    drawText(`${formulaText} = ${totalValue} multiplier`, contentX, currentY, '18px Arial', '#ffffff', 'left', 'middle');
-    currentY += rowHeight;
+
 
     // Draw multiplier calculation
     const wordLength = 5;
     const wordMultiplier = PAYOUT_RULES[wordLength] || 2;
     const finalValue = totalValue * wordMultiplier;
+
+    // Draw letter value calculation
+    drawText(`(${formulaText}) X ${wordMultiplier} = ${totalValue * wordMultiplier} multiplier`, contentX, currentY, '18px Arial', '#ffffff', 'left', 'middle');
+    currentY += rowHeight;
 
     currentY += rowHeight;
 
@@ -2970,9 +2988,7 @@ function drawHistoryModal() {
     ctx.lineTo(closeBtnX + closeBtnSize - 12, closeBtnY + closeBtnSize - 12);
     ctx.moveTo(closeBtnX + 12, closeBtnY + closeBtnSize - 12);
     ctx.lineTo(closeBtnX + closeBtnSize - 12, closeBtnY + 12);
-    ctx.stroke();
-
-    // Draw history table header
+    ctx.stroke();    // Draw history table header
     const contentX = modalX + 30;
     const contentY = modalY + 80;
     const rowHeight = 40;
@@ -2982,8 +2998,8 @@ function drawHistoryModal() {
     ctx.textAlign = 'left';
     ctx.fillText('Time', contentX, contentY);
     ctx.fillText('Bet', contentX + 150, contentY);
-    ctx.fillText('Win', contentX + 250, contentY);
-    ctx.fillText('Paylines Hit', contentX + 350, contentY);
+    ctx.fillText('Score', contentX + 250, contentY);
+    ctx.fillText('Words', contentX + 350, contentY);
     ctx.fillText('Return %', contentX + 500, contentY);
 
     // Draw divider line
@@ -3008,15 +3024,20 @@ function drawHistoryModal() {
             const winPercentage = entry.totalBet > 0 ? Math.round((entry.winAmount / entry.totalBet) * 100) : 0;
             const color = entry.winAmount > 0 ? '#4caf50' : '#ffffff';
 
+            // Count of winning words (using winningLines.length)
+            const wordCount = entry.winningLines || 0;
+
             ctx.font = '16px Arial';
             ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'left';            // Convert stored timestamp to readable date - fixing the invalid date issue
+            ctx.textAlign = 'left';
+            // Convert stored timestamp to readable date - fixing the invalid date issue
             const date = new Date(parseInt(entry.time));
             ctx.fillText(entry.timestamp || date.toLocaleTimeString(), contentX, currentY);
-            ctx.fillText(entry.totalBet, contentX + 150, currentY);            // Use green text for wins
+            ctx.fillText(entry.totalBet, contentX + 150, currentY);
+            // Use green text for wins
             ctx.fillStyle = color;
             ctx.fillText(Math.round(entry.winAmount), contentX + 250, currentY);
-            ctx.fillText(entry.count || 0, contentX + 350, currentY);
+            ctx.fillText(wordCount, contentX + 350, currentY);
             ctx.fillText(winPercentage + '%', contentX + 500, currentY);
 
             currentY += rowHeight;
@@ -3763,7 +3784,7 @@ async function loadWordDefinitions() {
         // Use XMLHttpRequest which is more widely supported
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', './words/definitions', true);
+            xhr.open('GET', './words/definitions.txt', true);
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
@@ -3869,7 +3890,7 @@ function drawWordDefinition(timestamp) {
     ctx.save();
     ctx.globalAlpha = definitionOpacity;
     ctx.fillStyle = "#ffffff"; // Set text color to white
-    ctx.font = "16px Arial"; // Make text 1pt smaller (default was 16px)
+    ctx.font = "18px Arial"; // Make text 1pt smaller (default was 16px)
     // Create combined text with word and definition on the same line
     const combinedText = currentDef.word.toUpperCase() + ": " + currentDef.definition;
 
@@ -3893,4 +3914,16 @@ function drawWordDefinition(timestamp) {
     ctx.fillText(line, defX, lineY);
 
     ctx.restore();
+}
+
+// --- Helper Functions ---
+
+// Fisher-Yates shuffle algorithm to randomize arrays
+function shuffleArray(array) {
+    const newArray = [...array]; // Create a copy to avoid modifying the original
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]]; // Swap elements
+    }
+    return newArray;
 }

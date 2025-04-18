@@ -243,6 +243,7 @@ function calculateWins(visibleSymbols, betAmount) {
 
             // Calculate final win amount (word value × length multiplier × bet)
             const winAmount = baseValue * lengthMultiplier * betAmount;
+            //console.log(`Word: ${wordLine.symbolName}, Multiplier: ${lengthMultiplier}, Win Amount: ${winAmount}`);
 
             // Store win info
             if (winAmount > 0) {
@@ -316,6 +317,11 @@ function findValidSubwords(word, positions, results, symbolMapping, reelResults)
     for (let start = 0; start <= word.length - 3; start++) {
         for (let len = 3; len <= word.length - start; len++) {
             const subword = word.substring(start, start + len);
+
+            // Skip words with a length that has a multiplier of 0
+            if (PAYOUT_RULES[len] === 0) {
+                continue;
+            }
 
             // Check if this is a valid word using our mock isValidWord function
             if (mockIsValidWord(subword)) {

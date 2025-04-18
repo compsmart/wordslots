@@ -88,45 +88,72 @@ export function findWords(reelResults, symbolMapping) {
     return words;
 }
 
-// Helper function to find all valid subwords in a string
+// Import PAYOUT_RULES to check for 0 multipliers
+import { PAYOUT_RULES } from './themes/config.js';
+
+// Helper function to find only the longest valid word in a string
 function findValidSubwords(word, positions, results, symbolMapping, reelResults) {
-    // Try all possible subwords of length 3 or more
+    let longestValidWord = null;
+    let longestWordLength = 0;
+    let longestWordStart = -1;
+
+    // First pass: find the longest valid word in this sequence
     for (let start = 0; start <= word.length - 3; start++) {
-        for (let len = 3; len <= word.length - start; len++) {
+        for (let len = word.length - start; len >= 3; len--) {
             const subword = word.substring(start, start + len);
 
-            // Check if this is a valid word
-            if (isValidWord(subword)) {
-                // Calculate the value of the word
-                let wordValue = 0;
-                let wordPositions = [];
+            // Skip words with a length that has a multiplier of 0
+            if (PAYOUT_RULES[len] === 0) {
+                continue;
+            }
 
-                for (let i = 0; i < len; i++) {
-                    const posIndex = start + i;
-                    const position = positions[posIndex];
-                    wordPositions.push(position);
-
-                    // Get symbol number from the position
-                    const symbolNumber = position.reel !== undefined && position.row !== undefined ?
-                        // If we're working with an array of positions with reel and row
-                        reelResults[position.reel][position.row] :
-                        // If we're working with symbol numbers directly (in letter sequence)
-                        Number(word.charCodeAt(posIndex) - 65); // Convert letter back to symbol number
-
-                    // Add the value of this symbol
-                    if (symbolMapping && symbolMapping[symbolNumber]) {
-                        wordValue += symbolMapping[symbolNumber].value || 0;
-                    }
-                }
-
-                results.push({
-                    word: subword,
-                    positions: wordPositions,
-                    value: wordValue,
-                    length: subword.length
-                });
+            // If we found a valid word and it's longer than any we've found so far
+            if (isValidWord(subword) && len > longestWordLength) {
+                longestValidWord = subword;
+                longestWordLength = len;
+                longestWordStart = start;
+                // Break inner loop once we find a valid word at this starting position
+                break;
             }
         }
+
+        // If we found a word starting at this position, skip ahead past this word
+        if (longestWordStart === start && longestWordLength > 0) {
+            // Skip ahead past this word (optional, can be removed if we want to allow overlapping words)
+            start += longestWordLength - 1;
+        }
+    }
+
+    // If we found a valid word, add it to results
+    if (longestValidWord) {
+        // Calculate the value of the word
+        let wordValue = 0;
+        let wordPositions = [];
+
+        for (let i = 0; i < longestWordLength; i++) {
+            const posIndex = longestWordStart + i;
+            const position = positions[posIndex];
+            wordPositions.push(position);
+
+            // Get symbol number from the position
+            const symbolNumber = position.reel !== undefined && position.row !== undefined ?
+                // If we're working with an array of positions with reel and row
+                reelResults[position.reel][position.row] :
+                // If we're working with symbol numbers directly (in letter sequence)
+                Number(word.charCodeAt(posIndex) - 65); // Convert letter back to symbol number
+
+            // Add the value of this symbol
+            if (symbolMapping && symbolMapping[symbolNumber]) {
+                wordValue += symbolMapping[symbolNumber].value || 0;
+            }
+        }
+
+        results.push({
+            word: longestValidWord,
+            positions: wordPositions,
+            value: wordValue,
+            length: longestWordLength
+        });
     }
 }
 
