@@ -2,6 +2,8 @@
 
 A unique slot machine game that combines the word-building fun of Scrabble with the excitement of slot machines.
 
+Try it here: [Slot Game Demo](https://words.compsmart.co.uk)
+
 ![Scrabble Slots Screenshot](screenshot.png)
 
 ## Game Overview
