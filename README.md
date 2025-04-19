@@ -40,20 +40,38 @@ Scrabble Slots is an innovative slot machine game where players win by forming v
   - 10 points: Q, Z
 
 - Word length multipliers determine the final score:
-  - 3-letter words: 0.01× multiplier
-  - 4-letter words: 0.01× multiplier
-  - 5-letter words: 0.1× multiplier
+  - 3-letter words: 0.1× multiplier
+  - 4-letter words: 0.1× multiplier
+  - 5-letter words: 10× multiplier (Epic Win Bonus!)
+
+### Special Tiles
+
+The game features special letter tiles that can dramatically increase your score:
+
+- **DL (Double Letter)**: Doubles the value of that specific letter
+- **TL (Triple Letter)**: Triples the value of that specific letter
+- **DW (Double Word)**: Doubles the total value of the entire word
+- **TW (Triple Word)**: Triples the total value of the entire word
+
+These special tiles are based on the classic Scrabble board layout, with bonus squares in strategic positions.
 
 ### Calculating Wins
 
 1. Add up the values of all letters in the word
-2. Apply the word length multiplier
-3. Multiply by your bet amount
+2. Apply any letter-specific multipliers (DL, TL) to individual letters
+3. Apply the word length multiplier
+4. Apply any word-wide multipliers (DW, TW)
+5. Multiply by your bet amount
 
 For example:
 - The word "BAKE" contains B(3) + A(1) + K(5) + E(1) = 10 points
-- As a 4-letter word, it gets a 0.01× multiplier
-- Final win: 10 × 0.01 × your bet amount
+- As a 4-letter word, it gets a 0.1× multiplier
+- Final win: 10 × 0.1 × your bet amount = 1 × your bet amount
+
+If "BAKER" is found (a 5-letter word):
+- B(3) + A(1) + K(5) + E(1) + R(1) = 11 points
+- As a 5-letter word, it gets the epic 10× multiplier
+- Final win: 11 × 10 × your bet amount = 110 × your bet amount!
 
 ### Important Notes
 

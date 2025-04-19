@@ -1604,11 +1604,10 @@ function checkWinAndFinalize() {
     if (winInfo && winInfo.totalAmount > 0) {
         balance += winInfo.totalAmount;
         updateBalanceDisplay();
-        playSound('win');
-        // Add to history display (use info from winInfo or winningLines)
+        playSound('win');        // Add to history display (use info from winInfo or winningLines)
         // Pass the number of winning paylines instead of symbol count
-        addToHistory(true, winInfo.bestMatch.symbolName, winInfo.allLines.length, winInfo.totalAmount);        // Check if this is a 5-of-a-kind win and trigger epic animation
-        if (winInfo.allLines.some(line => line.count >= 7)) {
+        addToHistory(true, winInfo.bestMatch.symbolName, winInfo.allLines.length, winInfo.totalAmount);        // Check if this is a 5-letter word and trigger epic animation
+        if (winInfo.allLines.some(line => line.count === 5)) {
             triggerEpicWinAnimation(winInfo.totalAmount);
         }
         // Trigger win celebration if significant win
@@ -2800,7 +2799,7 @@ function drawPaytableModal() {
     ctx.rect(modalX + contentPadding, modalY + 80, contentWidth, visibleHeight);
     ctx.clip();    // Draw rules content - apply scrolling offset to all Y positions
     const contentX = modalX + 50;
-    const baseContentY = modalY + 80; // This is the fixed starting position
+    const baseContentY = modalY + 130; // Increased from 80 to 130 to move content down by 50px
     const adjustedContentY = baseContentY - paytableScrollY; // Apply scroll offset
     let contentY = adjustedContentY; // This will be used and incremented as we draw
     const rowHeight = 30;
@@ -2821,7 +2820,11 @@ function drawPaytableModal() {
         "3. Words can be formed horizontally or vertically.",
         "4. Words must be at least 3 letters long.",
         "5. Longer words earn bigger multipliers!",
-        "6. Each letter has a point value based on Scrabble scoring."
+        "6. Each letter has a point value based on Scrabble scoring.",
+        "8. 3 or 4 letter words (common) have a x 0.1 bet multiplier",
+        "9. 5 letter words (rare) have a x 10 bet multipler",
+        "10. Special tiles can enhance your score even more!",
+
     ];
 
     rules.forEach(rule => {
@@ -2907,19 +2910,79 @@ function drawPaytableModal() {
         { length: "8+ letters", multiplier: "10×" }
     ];
 
-    currentY += rowHeight / 2; // Add space
-
-    // Example scoring section
-    drawText('SCORING EXAMPLE', contentX, currentY, 'bold 22px Arial', '#ffcc00', 'left', 'middle');
+    currentY += rowHeight / 2; // Add space    // Example scoring section
+    drawText('SCORING EXAMPLES', contentX, currentY, 'bold 22px Arial', '#ffcc00', 'left', 'middle');
     currentY += rowHeight;
 
+    // First example: BAKE
     // Draw example text with highlight for the word
-    const exampleWord = "BAKER";
-    const exampleText1 = "Finding the word ";
-    const exampleText2 = " would score:";
+    let exampleWord = "BAKE";
+    let exampleText1 = "Finding the word ";
+    let exampleText2 = " would score:";
 
     // Draw text in parts to highlight the example word
     let textX = contentX;
+    ctx.font = '18px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // Draw first part of text
+    ctx.fillText(exampleText1, textX, currentY);
+    textX += ctx.measureText(exampleText1).width;
+
+    // Draw highlighted word
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText(exampleWord, textX, currentY);
+    textX += ctx.measureText(exampleWord).width;
+
+    // Draw remaining text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '18px Arial';
+    ctx.fillText(exampleText2, textX, currentY);
+
+    currentY += rowHeight;
+
+    // Draw letter breakdown for BAKE
+    const bakeLetters = [
+        { letter: "B", value: 3 },
+        { letter: "A", value: 1 },
+        { letter: "K", value: 5 },
+        { letter: "E", value: 1 }
+    ];
+
+    let bakeFormulaText = "";
+    let bakeTotalValue = 0;
+
+    bakeLetters.forEach((item, index) => {
+        bakeTotalValue += item.value;
+        bakeFormulaText += item.letter + "(" + item.value + ")";
+        if (index < bakeLetters.length - 1) {
+            bakeFormulaText += " + ";
+        }
+    });
+
+    // Draw multiplier calculation for BAKE
+    const bakeWordLength = 4;
+    const bakeWordMultiplier = PAYOUT_RULES[bakeWordLength] || 1;
+    const bakeFinalValue = bakeTotalValue * bakeWordMultiplier;
+
+    // Draw letter value calculation
+    drawText(`(${bakeFormulaText}) X ${bakeWordMultiplier} = ${bakeFinalValue} multiplier`, contentX, currentY, '18px Arial', '#ffffff', 'left', 'middle');
+    currentY += rowHeight;
+
+    // Draw bet calculation
+    drawText(`${bakeFinalValue} × bet amount = your win`, contentX, currentY, '18px Arial', '#ffffff', 'left', 'middle');
+    currentY += rowHeight * 2;
+
+    // Second example: BAKER
+    exampleWord = "BAKER";
+    exampleText1 = "Finding the word ";
+    exampleText2 = " would score:";
+
+    // Draw text in parts to highlight the example word
+    textX = contentX;
     ctx.font = '18px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
