@@ -789,6 +789,9 @@ function drawGame(timestamp) {
     // Draw word definitions with transitions
     drawWordDefinition(timestamp);
 
+    // Draw win amount
+    drawWinAmount(timestamp, winAmount);
+
     requestAnimationFrame(drawGame);
 }
 
@@ -2425,30 +2428,10 @@ function drawWinLines(timestamp, ctx, reelsCtx = null) {
         // Apply win effects
         applyWinEffects(ctx, lineData, timestamp);
     }); // --- End of winningLines loop ---
-
-
-    // --- Display Total Win Amount (No change needed here) ---
+    // --- Display Total Win Amount ---
     const totalWin = winningLines.reduce((sum, line) => sum + line.amount, 0);
-    if (totalWin > 0) {
-        let winTextY = startY + SYMBOL_SIZE * VISIBLE_ROWS + 50;
-        const winTextX = canvas.width / 2;
-        // ... (rest of win amount drawing logic remains the same) ...
-        const pulse = Math.sin(timestamp / 200) * 0.05 + 1;
-        const baseFontSize = 36;
-        const fontSize = Math.floor(baseFontSize * pulse);
-        const glowIntensity = Math.abs(Math.sin(timestamp / 350)) * 10 + 5;
-        const glowColor = `rgba(255, 223, 0, ${0.6 + Math.abs(Math.sin(timestamp / 350)) * 0.4})`;
+    winAmount = totalWin;
 
-        ctx.save();
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = glowColor;
-        ctx.shadowBlur = glowIntensity;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(`WIN: ${totalWin.toLocaleString()}`, winTextX, winTextY);
-        ctx.restore();
-    }
 }
 
 // Draw all configured paylines when the Show Paylines button is toggled on
@@ -4076,8 +4059,35 @@ function drawWordDefinition(timestamp) {
             line = testLine;
         }
     }
-    ctx.fillText(line, defX, lineY);
+    ctx.fillText(line, defX, lineY);    // Removed win amount display from here - now handled by drawWinAmount function
+    ctx.restore();
+}
 
+// Draw the win amount with special effects
+function drawWinAmount(timestamp, amount) {
+    if (!amount || amount <= 0) return;
+
+    const defX = canvas.width / 2;
+    const lineY = canvas.height - 140;
+
+    // Apply pulse effect for dynamic sizing
+    const pulse = Math.sin(timestamp / 200) * 0.05 + 1;
+    const baseFontSize = 36;
+    const fontSize = Math.floor(baseFontSize * pulse);
+
+    // Create glow effect that pulses
+    const glowIntensity = Math.abs(Math.sin(timestamp / 350)) * 10 + 5;
+    const glowColor = `rgba(255, 223, 0, ${0.6 + Math.abs(Math.sin(timestamp / 350)) * 0.4})`;
+
+    // Draw the win amount text with glow effect
+    ctx.save();
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = glowIntensity;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`WIN: ${amount.toLocaleString()}`, defX, lineY - 55);
     ctx.restore();
 }
 
