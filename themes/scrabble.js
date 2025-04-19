@@ -92,10 +92,10 @@ export const SCRABBLE_THEME = {
 
     // Use the board pattern drawing function from renderer.js
     renderThemeEffects: function (ctx, canvas, timestamp, config) {
-        drawScrabbleBoardPattern(ctx, canvas, {
-            gridSpacing: 60,
-            gridColor: "#255c28"
-        });
+        // drawScrabbleBoardPattern(ctx, canvas, {
+        //     gridSpacing: 60,
+        //     gridColor: "#255c28"
+        // });
     },
 
     // Custom render function for epic win animation

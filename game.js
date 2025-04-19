@@ -50,8 +50,10 @@ const DEFAULT_BET = 10;
 const SYMBOLS_ON_STRIP = 30; // How many symbols on the virtual reel strip
 
 // Game state
-let canvas;
+let canvas; // Main canvas for UI
 let ctx;
+let reelsCanvas; // Separate canvas for reels
+let reelsCtx;
 let balance = DEFAULT_BALANCE;
 let betAmount = DEFAULT_BET;
 let spinning = false;
@@ -65,6 +67,7 @@ let backgroundParticles = [];
 let svgSymbolSheet; // Hold the SVG sprite sheet Image object
 let svgLoaded = false; // Track if the SVG has been loaded
 let warpStars = []; // For space theme star warping effect
+let backgroundImage = null; // Hold the background image
 let lastTime = 0;
 let winAnimationActive = false;
 let confettiParticles = [];
@@ -156,9 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initGame() {
-    console.log("[DEBUG] initGame - START"); // <-- Log Start
-
-    // Get DOM elements
+    console.log("[DEBUG] initGame - START"); // <-- Log Start    // Get DOM elements
     canvas = document.getElementById('gameCanvas');
     // Check if canvas exists immediately
     if (!canvas) {
@@ -169,20 +170,30 @@ function initGame() {
     if (!ctx) {
         console.error("CRITICAL: Failed to get 2D context from canvas!");
         return; // Stop if no context
-    } console.log("[DEBUG] initGame - Canvas and Context obtained."); balanceElement = document.getElementById('balance');
+    }
+
+    // Initialize the reels canvas
+    reelsCanvas = document.getElementById('reelsCanvas');
+    if (!reelsCanvas) {
+        console.error("CRITICAL: Canvas element with ID 'reelsCanvas' not found!");
+        return; // Stop if no reels canvas
+    }
+    reelsCtx = reelsCanvas.getContext('2d');
+    if (!reelsCtx) {
+        console.error("CRITICAL: Failed to get 2D context from reels canvas!");
+        return; // Stop if no context
+    }
+    console.log("[DEBUG] initGame - Both canvases and contexts obtained."); balanceElement = document.getElementById('balance');
     betAmountElement = document.getElementById('betAmount');
     spinButton = document.getElementById('spinButton');
     decreaseBetButton = document.getElementById('decreaseBet');
     increaseBetButton = document.getElementById('increaseBet');
     addCreditButton = document.getElementById('addCreditBtn');
     themeSwitcherElement = document.getElementById('themeSwitcher');
-    console.log("[DEBUG] initGame - DOM elements retrieved.");
-
-    //load background.jpg
-    const backgroundImage = new Image();
-    backgroundImage.src = 'images/scrabble/background.jpg';
-    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-
+    console.log("[DEBUG] initGame - DOM elements retrieved.");    //load background.jpg
+    // backgroundImage = new Image();
+    // backgroundImage.src = 'images/scrabble/background.jpg';
+    console.log("[DEBUG] initGame - Loading background image");
 
     // Load sound effects
     console.log("[DEBUG] initGame - Loading sounds...");
@@ -730,7 +741,7 @@ function initReels() {
 // --- Main Game Loop ---
 // Update drawGame to include epic win animation rendering
 function drawGame(timestamp) {
-    if (!ctx) return; // Ensure context is available
+    if (!ctx || !reelsCtx) return; // Ensure both contexts are available
 
     // Calculate delta time for smooth animations
     if (!lastTime) lastTime = timestamp;
@@ -742,23 +753,29 @@ function drawGame(timestamp) {
     // const clampedDeltaTime = Math.min(deltaTime, maxDeltaTime);
     // Use clampedDeltaTime for physics/animation updates if needed
 
+    // Clear both canvases
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    reelsCtx.clearRect(0, 0, reelsCanvas.width, reelsCanvas.height);
+
+    // Draw on main canvas
     drawBackground(timestamp); // Draw static or animated background
-    drawReels(deltaTime, timestamp); // Update and draw reels, passing timestamp for effects
-    drawReelMask(); // Draw mask/overlay over reels if needed
+    // Draw on reels canvas
+    drawReels(deltaTime, timestamp, reelsCtx); // Update and draw reels on reelsCanvas
 
-    drawUIElements(); // Draw balance, bet, buttons
-
+    // Draw winning lines on reels canvas if needed
     if (!spinning && winningLines.length > 0) {
-        drawWinLines(timestamp); // Draw winning line highlights
+        drawWinLines(timestamp, reelsCtx); // Draw winning line highlights on reels canvas
     }
 
-    if (showPaylines) {
-        drawAllPaylines(timestamp); // Draw all paylines if toggled on
-    }
+    drawReelMask(reelsCtx); // Draw mask/overlay over reels on reelsCanvas
+
+    // Draw UI elements on main canvas
+    drawUIElements(); // Draw balance, bet, buttons    if (showPaylines) {
+    drawAllPaylines(timestamp, reelsCtx); // Draw all paylines on reels canvas
+
 
     if (winAnimationActive) {
-        drawWinCelebration(deltaTime); // Draw confetti etc.
+        drawWinCelebration(deltaTime, reelsCtx); // Draw win celebration effects
     }
 
     drawPaytableModal(); // Draw Pay Table modal if active
@@ -807,23 +824,49 @@ function drawBackground(timestamp) {
         const maxRadius = Math.max(canvas.width, canvas.height);
         const pulseRadius = maxRadius * (0.7 + pulseValue * 0.3);
 
-        const radialGradient = ctx.createRadialGradient(
-            centerX, centerY, 10,
-            centerX, centerY, pulseRadius
-        );
-        radialGradient.addColorStop(0, shiftColor(baseColor, pulseValue * 50, 0.8));
-        radialGradient.addColorStop(1, 'transparent');
+        // const radialGradient = ctx.createRadialGradient(
+        //     centerX, centerY, 10,
+        //     centerX, centerY, pulseRadius
+        // );
+        // radialGradient.addColorStop(0, shiftColor(baseColor, pulseValue * 50, 0.8));
+        // radialGradient.addColorStop(1, 'transparent');
 
-        ctx.fillStyle = radialGradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // ctx.fillStyle = radialGradient;
+        // ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     // Draw the base gradient background
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, topColor);
-    gradient.addColorStop(1, bottomColor);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);    // Draw particles if enabled
+    // const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    // gradient.addColorStop(0, topColor);
+    // gradient.addColorStop(1, bottomColor);
+    // ctx.fillStyle = gradient;
+    // ctx.fillRect(0, 0, canvas.width, canvas.height);    // Draw the background image if it's loaded
+    if (backgroundImage && backgroundImage.complete) {
+        // Calculate the aspect ratio of the image and canvas
+        const imageAspectRatio = backgroundImage.width / backgroundImage.height;
+        const canvasAspectRatio = canvas.width / canvas.height;
+
+        let drawWidth, drawHeight;
+        let offsetX = 0, offsetY = 0;
+
+        // Determine whether to scale by width or height
+        if (imageAspectRatio > canvasAspectRatio) {
+            // Image is wider than canvas, scale by height
+            drawHeight = canvas.height * 1;
+            drawWidth = drawHeight * imageAspectRatio;
+            offsetX = (canvas.width - drawWidth) / 2; // Center horizontally
+        } else {
+            // Image is taller than canvas, scale by width
+            drawWidth = canvas.width * 1;
+            drawHeight = drawWidth / imageAspectRatio;
+            offsetY = (canvas.height - drawHeight) / 2; // Center vertically
+        }
+
+        // Draw the image with calculated dimensions and offsets
+        ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
+
+    // Draw particles if enabled
     if (useParticles && bgEffects?.particles) {
         // Initialize particles if they don't exist or theme changed
         if (!backgroundParticles.length || backgroundParticles.themeId !== currentThemeName) {
@@ -834,9 +877,8 @@ function drawBackground(timestamp) {
         drawBackgroundParticles(timestamp, bgEffects.particles);
     }
 
-    // Draw theme-specific background effects
     if (effectsEnabled && themeEffects?.themeSpecific) {
-        drawThemeSpecificBackgroundEffects(timestamp, themeEffects);
+        //drawThemeSpecificBackgroundEffects(timestamp, themeEffects);
     }
 }
 
@@ -959,7 +1001,7 @@ function drawThemeSpecificBackgroundEffects(timestamp, themeEffects) {
     }
 }
 
-function drawReels(deltaTime, timestamp) {
+function drawReels(deltaTime, timestamp, ctx) {
     const reelWidth = SYMBOL_SIZE;
 
     // Get the current theme's layout configuration
@@ -1204,7 +1246,7 @@ EffectsHelper.hexToHsl = function (hex) {
     };
 };
 
-function drawReelMask() {
+function drawReelMask(ctx) {
     const reelWidth = SYMBOL_SIZE;
 
     // Get the current theme's layout configuration
@@ -1990,8 +2032,8 @@ function drawThemeTestButton() {
     const testBtnY = muteBtnY; // Same Y position as mute button
 
     // Draw the button
-    drawRoundedRect(testBtnX, testBtnY, testBtnWidth, testBtnHeight, 8, 'rgba(255, 51, 102, 0.8)', '#ffffff', 2);
-    drawText('TEST EPIC WIN', testBtnX + testBtnWidth / 2, testBtnY + testBtnHeight / 2, 'bold 14px Arial', '#FFFFFF', 'center', 'middle');
+    //drawRoundedRect(testBtnX, testBtnY, testBtnWidth, testBtnHeight, 8, 'rgba(255, 51, 102, 0.8)', '#ffffff', 2);
+    //drawText('TEST EPIC WIN', testBtnX + testBtnWidth / 2, testBtnY + testBtnHeight / 2, 'bold 14px Arial', '#FFFFFF', 'center', 'middle');
 }
 
 function drawText(text, x, y, font, color, align = 'left', baseline = 'top') {
@@ -2288,7 +2330,9 @@ function handleWheel(e) {
 }
 
 // --- Win Line Drawing ---
-function drawWinLines(timestamp) {
+function drawWinLines(timestamp, ctx, reelsCtx = null) {
+    // Use reels context if provided, otherwise use the main context
+    const targetCtx = reelsCtx || ctx;
     // No change needed at the start (check winningLines)
     if (!winningLines || winningLines.length === 0) return;
 
@@ -2331,26 +2375,23 @@ function drawWinLines(timestamp) {
     winningLines.forEach((lineData, lineIndex) => {
         if (!lineData || !lineData.positions || lineData.positions.length < MIN_WIN_LENGTH) return;
 
-        const color = lineColors[lineIndex % lineColors.length]; // Cycle through colors for each line
-        // --- Draw the specific line segment connecting winning positions ---
-        ctx.strokeStyle = flash ? color : '#ffffff'; // Use assigned color with flash
-        ctx.lineWidth = 5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = 0.85; ctx.beginPath(); for (let k = 0; k < lineData.positions.length; k++) { // Iterate ONLY through positions of THIS line
+        const color = lineColors[lineIndex % lineColors.length]; // Cycle through colors for each line        // --- Draw the specific line segment connecting winning positions ---
+        targetCtx.strokeStyle = flash ? color : '#ffffff'; // Use assigned color with flash
+        targetCtx.lineWidth = 5;
+        targetCtx.lineCap = 'round';
+        targetCtx.lineJoin = 'round';
+        targetCtx.globalAlpha = 0.85; targetCtx.beginPath(); for (let k = 0; k < lineData.positions.length; k++) { // Iterate ONLY through positions of THIS line
             const pos = lineData.positions[k];
             // Use the configured actualSpacing to calculate correct position
             const x = startX + pos.reel * (reelWidth + actualSpacing) + symbolCenterOffsetX;
-            const y = startY + pos.row * SYMBOL_SIZE + symbolCenterOffsetY;
-
-            if (k === 0) {
-                ctx.moveTo(x, y); // Start the line path
+            const y = startY + pos.row * SYMBOL_SIZE + symbolCenterOffsetY; if (k === 0) {
+                targetCtx.moveTo(x, y); // Start the line path
             } else {
-                ctx.lineTo(x, y); // Draw segment to the next point on this line
+                targetCtx.lineTo(x, y); // Draw segment to the next point on this line
             }
         }
-        ctx.stroke(); // Draw the complete line segment for this winning line
-        ctx.globalAlpha = 1.0; // Reset alpha  
+        targetCtx.stroke(); // Draw the complete line segment for this winning line
+        targetCtx.globalAlpha = 1.0; // Reset alpha  
         lineData.positions.forEach(pos => {
             const symbolData = symbols[lineData.symbolIndex]; // Get visual data
             if (!symbolData) return;            // Fix: Use 'reel' and 'row' properties consistent with line drawing
@@ -4051,3 +4092,24 @@ function shuffleArray(array) {
     }
     return newArray;
 }
+
+// Function to check orientation and toggle overlay
+function checkOrientation() {
+    const overlay = document.getElementById('orientationOverlay');
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
+    if (isMobile && window.innerWidth > window.innerHeight) {
+        // Show overlay if in landscape mode
+        overlay.style.display = 'flex';
+    } else {
+        // Hide overlay if in portrait mode
+        overlay.style.display = 'none';
+    }
+}
+
+// Add event listener for orientation changes
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
+
+// Initial check on page load
+checkOrientation();
