@@ -10,6 +10,8 @@ import {
 } from './themes/config.js';
 // Import word finder module for Scrabble Slots
 import { loadValidWords, findWords, wordsToPaylines } from './wordFinder.js';
+// Import the createSpecialTiles function from our refactored game mechanics module
+import { createSpecialTiles } from './core/gameMechanics.js';
 
 const REEL_COUNT = 5;
 // const SYMBOL_COUNT = 26; // For Scrabble Slots, we have 26 letters (A-Z)
@@ -259,7 +261,9 @@ function validateConfiguration() {
         console.error("Config Error: reelStrips is missing or doesn't have 5 reels.");
         isValid = false;
     } else {
+
         reelStrips.forEach((strip, i) => {
+            strip = shuffleArray(strip);
             if (!strip || strip.length === 0) {
                 console.error(`Config Error: Reel strip ${i} is empty.`);
                 isValid = false;
@@ -275,11 +279,16 @@ function validateConfiguration() {
         console.error("Config Error: symbolNumberMultipliers is missing.");
         isValid = false;
     } else {
-        // For Scrabble Slots, we need 26 letters (0-25 for A-Z)
-        const symbolCount = Object.keys(symbolNumberMultipliers).length;
-        if (symbolCount !== 26) {
-            console.error(`Config Error: symbolNumberMultipliers should define 26 letters for Scrabble Slots, but found ${symbolCount}.`);
+        // Check if we have at least the basic 26 letters (A-Z)
+        const basicLetterCount = Object.keys(symbolNumberMultipliers)
+            .filter(key => Number(key) >= 0 && Number(key) <= 25)
+            .length;
+
+        if (basicLetterCount !== 26) {
+            console.error(`Config Error: symbolNumberMultipliers should define at least the 26 basic letters (0-25) for Scrabble Slots, but found ${basicLetterCount} basic letters.`);
             isValid = false;
+        } else {
+            console.log(`Configuration includes ${Object.keys(symbolNumberMultipliers).length} total symbols (26 regular letters plus special tiles).`);
         }
     }
     if (!PAYOUT_RULES || !PAYOUT_RULES[3] || !PAYOUT_RULES[4] || !PAYOUT_RULES[5]) {
@@ -670,7 +679,10 @@ function initReels() {
     reels = [];
     // Config is validated at startup, assume reelStrips is valid here
     // const configuredStrips = reelStrips; // Use imported global config
-
+    reelStrips.forEach((strip, i) => {
+        // Shuffle the strip for randomness
+        reelStrips[i] = shuffleArray(strip); // Shuffle the strip for randomness
+    });
     for (let i = 0; i < REEL_COUNT; i++) {
         // Config validation moved to initGame
         reels.push({
@@ -686,6 +698,31 @@ function initReels() {
     }
     currentReelResults = Array(REEL_COUNT).fill(null).map(() => Array(VISIBLE_ROWS).fill(0));
     console.log("Reels initialized with GLOBAL configured strips.");
+
+    // Create special symbols for initial game state
+    // This ensures special tiles appear on initial game load (not just after spins)
+    console.log("Creating special symbols for initial game state...");
+
+    // Create a copy of the symbol multipliers with special tiles
+    const specializedSymbols = createSpecialTiles(symbolNumberMultipliers); // Use configured special tiles from reelStrips
+
+    // Update the symbols object with special types for rendering
+    symbols = symbols.map((symbol, index) => {
+        // Get the corresponding entry from specializedSymbols
+        const letterIndex = index < 26 ? index : index % 26; // Handle indices beyond basic A-Z
+        const specialData = specializedSymbols[letterIndex];
+
+        // If this symbol has been given a special type, apply it
+        if (specialData && specialData.type) {
+            return {
+                ...symbol,
+                type: specialData.type,
+                letter: specialData.letter
+            };
+        }
+
+        return symbol;
+    });
 }
 
 
@@ -1022,49 +1059,21 @@ function drawReels(deltaTime, timestamp) {
                 const symbolTopY = startY + (j * SYMBOL_SIZE) - verticalOffset;
 
                 if (symbolTopY + SYMBOL_SIZE >= startY && symbolTopY <= startY + reelViewportHeight) {
-                    if (symbol) {
-                        // --- Draw Symbol Logic (SVG/Image/Fallback) ---
-                        // Check if the current theme has a custom renderSymbol function
-                        let customRendered = false;
-                        if (currentThemeName === "Scrabble" && THEMES[currentThemeName].renderSymbol) {
-                            // Use the custom render function from the Scrabble theme
-                            customRendered = THEMES[currentThemeName].renderSymbol(ctx, symbol, reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE, {
-                                reel: i,
-                                position: j,
-                                spinning: reel.spinning
-                            });
-                        }
 
-                        // Only proceed with standard rendering if custom rendering wasn't handled
-                        if (!customRendered) {
-                            let drawnFromSprite = false;
-                            if (svgLoaded && symbol.name) {
-                                ctx.fillStyle = symbol.backgroundColor || symbol.color || '#cccccc';
-                                ctx.fillRect(reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                                drawnFromSprite = drawSymbol(symbol.name, ctx, reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                            }
-                            if (!drawnFromSprite) {
-                                if (symbol.image && symbol.image.complete && symbol.image.naturalHeight !== 0) {
-                                    if (symbol.imagePath) { // Draw background for transparent PNGs
-                                        ctx.fillStyle = symbol.backgroundColor || symbol.color || '#cccccc';
-                                        ctx.fillRect(reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                                    }
-                                    ctx.drawImage(symbol.image, reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                                } else {
-                                    ctx.fillStyle = symbol.color || '#cccccc';
-                                    ctx.fillRect(reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                                    ctx.fillStyle = '#000000'; ctx.font = '16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                                    ctx.fillText(symbol.name ? symbol.name.substring(0, 1) : '?', reelX + SYMBOL_SIZE / 2, symbolTopY + SYMBOL_SIZE / 2);
-                                }
-                            }
-                        }
-                        // --- End Symbol Drawing ---
-                    } else {
-                        // Draw placeholder for missing symbol
-                        ctx.fillStyle = '#555'; ctx.fillRect(reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE);
-                        ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.fillText('?', reelX + SYMBOL_SIZE / 2, symbolTopY + SYMBOL_SIZE / 2);
-                    }
+                    //console.log(`Drawing symbol ${symbol.name})`);
+                    // --- Draw Symbol Logic (SVG/Image/Fallback) ---
+                    // Check if the current theme has a custom renderSymbol function
+                    let customRendered = false;
+                    // Only use the theme's custom renderer if the symbol is NOT a special tile
+                    // Use the custom render function from the Scrabble theme   
+                    customRendered = THEMES[currentThemeName].renderSymbol(ctx, symbol, reelX, symbolTopY, SYMBOL_SIZE, SYMBOL_SIZE, {
+                        reel: i,
+                        position: j,
+                        spinning: reel.spinning
+                    });
+
+                    // --- End Symbol Drawing ---
+
                 }
             }
         }
@@ -1492,9 +1501,7 @@ function spinCompleted() {
         }
         // Ensure position is precisely the target integer after potential floating point issues/early call
         reel.position = reel.targetPosition;
-    });
-
-    spinning = false; // Set global flag
+    }); spinning = false; // Set global flag
 
     // --- READ the visible symbols CORRECTLY based on drawReels logic ---
     currentReelResults = []; // Reset results grid
@@ -1506,18 +1513,21 @@ function spinCompleted() {
         // (because drawReels uses floor(position) as the top visible index)
         const finalTopIndex = Math.round(reel.targetPosition) % reelLength; // Index T
 
-        // Calculate indices for middle and bottom rows relative to the top row index
-        const finalMiddleIndex = (finalTopIndex + 1) % reelLength;        // Index T+1
-        const finalBottomIndex = (finalTopIndex + 2) % reelLength;        // Index T+2
+        // For Scrabble Slots with 5 visible rows
+        const rowIndices = [];
+        for (let row = 0; row < VISIBLE_ROWS; row++) {
+            rowIndices.push((finalTopIndex + row) % reelLength);
+        }
 
         // Get the actual symbol IDs from the configured reel strip at these visual positions
-        const topSymbolId = reel.symbols[finalTopIndex];
-        const middleSymbolId = reel.symbols[finalMiddleIndex];
-        const bottomSymbolId = reel.symbols[finalBottomIndex];
+        const rowSymbolIds = rowIndices.map(idx => reel.symbols[idx]);
 
-        // Store results in [Top, Middle, Bottom] order
-        currentReelResults[i] = [topSymbolId, middleSymbolId, bottomSymbolId];
-    }
+        // Store results for all visible rows
+        currentReelResults[i] = rowSymbolIds;
+    }    // Do NOT recreate special symbols here - they were already created during initialization
+    // and are being shuffled with the reels
+    console.log("Spin completed - special symbols remain with their tiles throughout the game.");
+
     console.log("Final Visible Results (Read Correctly):", currentReelResults); // DEBUG
 
     // --- Check for Wins (using the *actual* visual results) ---
@@ -1660,23 +1670,73 @@ function checkWin() {
         // Convert found words to paylines format
         const wordPaylines = wordsToPaylines(foundWords);
 
-        // Calculate win amount for each word based on its value and the bet amount
+        // Update the payout logic to apply modifiers for special tiles
         wordPaylines.forEach(wordLine => {
-            // Apply the word length multiplier from PAYOUT_RULES
             const wordLength = wordLine.count;
             const baseValue = wordLine.multiplier;
 
             // Get the length multiplier from PAYOUT_RULES (or 1 if not found)
-            const lengthMultiplier = PAYOUT_RULES[wordLength] || 1;
+            const lengthMultiplier = PAYOUT_RULES[wordLength] || 1;            // Apply letter-specific multipliers for dl (double letter) and tl (triple letter)
+            let adjustedBaseValue = baseValue;
+            let doubleWord = false;
+            let tripleWord = false;
 
-            // Calculate final win amount (word value × length multiplier × bet)
-            const winAmount = baseValue * lengthMultiplier * betAmount;
+            wordLine.positions.forEach(pos => {
+                // Get the symbol number from the reel results
+                const symbolNumber = currentReelResults[pos.reel][pos.row];
+                // Get the symbol data from symbolNumberMultipliers
+                const symbol = symbolNumberMultipliers[symbolNumber];
+
+                if (symbol) {
+                    // Check symbol type directly from the symbolNumberMultipliers data
+                    // Symbol numbers now directly encode the type:
+                    // 0-25: Regular letters
+                    // 26-51: DL (Double Letter)
+                    // 52-77: TL (Triple Letter)
+                    // 78-103: DW (Double Word)
+                    // 104-129: TW (Triple Word)
+
+                    if (symbol.type === "dl" || (symbolNumber >= 26 && symbolNumber <= 51)) {
+                        adjustedBaseValue += symbol.value; // Double letter - add value again
+                        console.log(`[DEBUG] Special tile: DL applied to letter ${symbol.letter} worth ${symbol.value} points`);
+                    } else if (symbol.type === "tl" || (symbolNumber >= 52 && symbolNumber <= 77)) {
+                        adjustedBaseValue += symbol.value * 2; // Triple letter - add value twice more
+                        console.log(`[DEBUG] Special tile: TL applied to letter ${symbol.letter} worth ${symbol.value} points`);
+                    }
+
+                    // Check for word multipliers and track them for later
+                    if (symbol.type === "dw" || (symbolNumber >= 78 && symbolNumber <= 103)) {
+                        doubleWord = true;
+                        console.log(`[DEBUG] Special tile: DW found in word "${wordLine.symbolName}" at position [${pos.reel},${pos.row}]`);
+                    } else if (symbol.type === "tw" || (symbolNumber >= 104 && symbolNumber <= 129)) {
+                        tripleWord = true;
+                        console.log(`[DEBUG] Special tile: TW found in word "${wordLine.symbolName}" at position [${pos.reel},${pos.row}]`);
+                    }
+                }
+            });
+
+            // Calculate the initial win amount (word value × length multiplier × bet)
+            let winAmount = adjustedBaseValue * lengthMultiplier * betAmount;
+
+            // Apply word-specific multipliers (dw and tw)
+            if (doubleWord) {
+                winAmount *= 2; // Double the word value
+                console.log(`[DEBUG] Applying DW: ${winAmount / 2} → ${winAmount}`);
+            }
+            if (tripleWord) {
+                winAmount *= 3; // Triple the word value
+                if (doubleWord) {
+                    console.log(`[DEBUG] Applying TW on top of DW: ${winAmount / 3} → ${winAmount}`);
+                } else {
+                    console.log(`[DEBUG] Applying TW: ${winAmount / 3} → ${winAmount}`);
+                }
+            }
 
             // Update the win line data
-            wordLine.multiplier = baseValue * lengthMultiplier; // Store the final multiplier
+            wordLine.multiplier = adjustedBaseValue * lengthMultiplier; // Store the final multiplier
             wordLine.amount = winAmount; // Store the final win amount
 
-            console.log(`[DEBUG] checkWin - Word "${wordLine.symbolName}" (${wordLength} letters): Base value ${baseValue}, Length multiplier ${lengthMultiplier}, Win amount ${winAmount}`);
+            console.log(`[DEBUG] checkWin - Word "${wordLine.symbolName}" (${wordLength} letters): Base value ${baseValue}, Adjusted base value ${adjustedBaseValue}, Length multiplier ${lengthMultiplier}, Win amount ${winAmount}`);
 
             // Add to total win amount
             totalWinAmount += winAmount;
@@ -2183,6 +2243,7 @@ function handleMouseDown(e) {
     if (isMouseOver(mouseX, mouseY, testBtnX, testBtnY, testBtnWidth, testBtnHeight)) {
         playSound('click');
         triggerEpicWinAnimation(winAmount);
+        updateWinningWordDefinitions([]);
     }
 }
 

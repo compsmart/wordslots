@@ -6,11 +6,8 @@
  */
 
 // Import necessary game configuration
-import { reelStrips, symbolNumberMultipliers, PAYOUT_RULES, PAYLINES } from './themes/config.js';
-import { isValidWord, symbolNumberToLetter } from './wordFinder.js';
-
-// Load the dictionary for testing
-let validWordSet;
+import { reelStrips, symbolNumberMultipliers, PAYOUT_RULES, PAYLINES, MIN_WIN_LENGTH } from './themes/config.js';
+import { isValidWord, symbolNumberToLetter, findWords as gameFinderWords, loadValidWords } from './wordFinder.js';
 
 // Configuration for simulation
 const DEFAULT_SIMULATION_SETTINGS = {
@@ -21,12 +18,14 @@ const DEFAULT_SIMULATION_SETTINGS = {
 };
 
 // Main simulation function
-function simulateRTP(settings = {}) {
+async function simulateRTP(settings = {}) {
     // Merge default settings with provided settings
     const config = { ...DEFAULT_SIMULATION_SETTINGS, ...settings };
 
-    console.log(`Starting RTP simulation with ${config.spins.toLocaleString()} spins...`);
-    console.time('Simulation completed in');    // Variables to track results
+    console.log(`Loading valid words dictionary...`);
+    await loadValidWords();
+    console.log(`Dictionary loaded, starting RTP simulation with ${config.spins.toLocaleString()} spins...`);
+    console.time('Simulation completed in');// Variables to track results
     let totalBet = 0;
     let totalWin = 0;
     let spinResults = [];
@@ -42,12 +41,39 @@ function simulateRTP(settings = {}) {
         '20-50x': 0,    // 20-50x bet
         '50-100x': 0,   // 50-100x bet
         '100x+': 0      // Over 100x bet
-    };
-
-    // Initialize symbol win tracking (for 26 letters A-Z)
+    };    // Initialize symbol win tracking (for regular letters A-Z and their special versions)
     for (let i = 0; i < 26; i++) {
+        // Regular letters (0-25)
         symbolWinCounts[i] = {
             name: `${String.fromCharCode(65 + i)}`,  // A-Z
+            count: 0,
+            totalWin: 0
+        };
+
+        // DL - Double Letter (26-51)
+        symbolWinCounts[i + 26] = {
+            name: `${String.fromCharCode(65 + i)}(DL)`,  // A(DL), B(DL), etc.
+            count: 0,
+            totalWin: 0
+        };
+
+        // TL - Triple Letter (52-77)
+        symbolWinCounts[i + 52] = {
+            name: `${String.fromCharCode(65 + i)}(TL)`,  // A(TL), B(TL), etc.
+            count: 0,
+            totalWin: 0
+        };
+
+        // DW - Double Word (78-103)
+        symbolWinCounts[i + 78] = {
+            name: `${String.fromCharCode(65 + i)}(DW)`,  // A(DW), B(DW), etc.
+            count: 0,
+            totalWin: 0
+        };
+
+        // TW - Triple Word (104-129)
+        symbolWinCounts[i + 104] = {
+            name: `${String.fromCharCode(65 + i)}(TW)`,  // A(TW), B(TW), etc.
             count: 0,
             totalWin: 0
         };
@@ -92,14 +118,25 @@ function simulateRTP(settings = {}) {
         const totalSpinWin = spinWins.totalWin;
 
         // Update stats
-        totalWin += totalSpinWin;
-
-        // Track individual spin results if detailed tracking is enabled
+        totalWin += totalSpinWin;        // Track individual spin results if detailed tracking is enabled
         if (config.detailedResults) {
+            // Find best word in this spin
+            let bestWord = "";
+            let bestWordWin = 0;
+
+            spinWins.winningLines.forEach(line => {
+                if (line.win > bestWordWin) {
+                    bestWordWin = line.win;
+                    bestWord = line.word || "";
+                }
+            });
+
             spinResults.push({
                 spin,
                 win: totalSpinWin,
-                multiplier: totalSpinWin / config.betAmount
+                multiplier: totalSpinWin / config.betAmount,
+                bestWord: bestWord,
+                bestWordWin: bestWordWin
             });
 
             // Update win distribution
@@ -203,16 +240,23 @@ function simulateRTP(settings = {}) {
         // Find highest win and its frequency
         let highestWin = 0;
         let highestWinMultiplier = 0;
+        let highestWinWord = "";
+        let highestWinSpinNumber = 0;
 
         spinResults.forEach(result => {
             if (result.win > highestWin) {
                 highestWin = result.win;
                 highestWinMultiplier = result.multiplier;
+                highestWinWord = result.bestWord || "";
+                highestWinSpinNumber = result.spin;
             }
         });
 
         console.log('\n=== HIGHEST WIN ===');
         console.log(`Highest Win: ${highestWin.toLocaleString()} (${highestWinMultiplier.toFixed(1)}x bet)`);
+        if (highestWinWord) {
+            console.log(`Highest Scoring Word: "${highestWinWord}" on spin #${highestWinSpinNumber.toLocaleString()}`);
+        }
     }
 
     console.timeEnd('Simulation completed in');
@@ -226,9 +270,8 @@ function calculateWins(visibleSymbols, betAmount) {
         totalWin: 0
     };
 
-    // Find words in the grid
+    // Find words in the grid using the real word finder (not the mock)
     const foundWords = findWordsInGrid(visibleSymbols, symbolNumberMultipliers);
-
     // Convert found words to payline format and calculate wins
     if (foundWords.length > 0) {
         const wordPaylines = wordsToPaylines(foundWords);
@@ -241,9 +284,46 @@ function calculateWins(visibleSymbols, betAmount) {
             // Get the length multiplier from PAYOUT_RULES
             const lengthMultiplier = PAYOUT_RULES[wordLength] || 1;
 
-            // Calculate final win amount (word value × length multiplier × bet)
-            const winAmount = baseValue * lengthMultiplier * betAmount;
-            //console.log(`Word: ${wordLine.symbolName}, Multiplier: ${lengthMultiplier}, Win Amount: ${winAmount}`);
+            // Apply letter-specific multipliers for dl (double letter) and tl (triple letter)
+            let adjustedBaseValue = baseValue;
+            let winAmount = 0;
+
+            // Check each position for special tiles
+            wordLine.positions.forEach(pos => {
+                // Get the symbol number from the reel results
+                const symbolNumber = visibleSymbols[pos.reel][pos.row];
+                // Get the symbol data including special tile type directly from symbolNumberMultipliers
+                const symbol = symbolNumberMultipliers[symbolNumber];
+
+                if (symbol && symbol.type) {
+                    // Check for double letter (dl) or triple letter (tl) special tiles
+                    if (symbol.type === "dl") {
+                        adjustedBaseValue += symbol.value; // Double letter - add value again
+                    } else if (symbol.type === "tl") {
+                        adjustedBaseValue += symbol.value * 2; // Triple letter - add value twice more
+                    }
+                }
+            });
+
+            // Calculate initial win amount (word value × length multiplier × bet)
+            winAmount = adjustedBaseValue * lengthMultiplier * betAmount;
+
+            // Apply word-specific multipliers for dw (double word) and tw (triple word)
+            wordLine.positions.forEach(pos => {
+                // Get the symbol number from the reel results
+                const symbolNumber = visibleSymbols[pos.reel][pos.row];
+                // Get the symbol data including special tile type
+                const symbol = symbolNumberMultipliers[symbolNumber];
+
+                if (symbol && symbol.type) {
+                    // Check for word multipliers
+                    if (symbol.type === "dw") {
+                        winAmount *= 2; // Double the word value
+                    } else if (symbol.type === "tw") {
+                        winAmount *= 3; // Triple the word value
+                    }
+                }
+            });
 
             // Store win info
             if (winAmount > 0) {
@@ -264,58 +344,22 @@ function calculateWins(visibleSymbols, betAmount) {
     return result;
 }
 
-// Find all valid words in the grid (similar to wordFinder.js's findWords function)
+// Use the game's actual findWords function to ensure consistent behavior
 function findWordsInGrid(reelResults, symbolMapping) {
-    const words = [];
-
     if (!reelResults || !reelResults.length) {
         console.error('No reel results provided to findWordsInGrid function');
-        return words;
+        return [];
     }
 
-    const rowCount = reelResults[0].length;
-    const colCount = reelResults.length;
-
-    // Check horizontal words (rows)
-    for (let row = 0; row < rowCount; row++) {
-        let horizontalWord = "";
-        let horizontalPositions = [];
-
-        for (let col = 0; col < colCount; col++) {
-            const symbolNumber = reelResults[col][row];
-            const letter = symbolNumberToLetter(symbolNumber, symbolMapping);
-            horizontalWord += letter;
-            horizontalPositions.push({ reel: col, row: row });
-        }
-
-        // Check all possible subwords in this row (minimum 3 letters)
-        findValidSubwords(horizontalWord, horizontalPositions, words, symbolMapping, reelResults);
-    }
-
-    // Check vertical words (columns)
-    for (let col = 0; col < colCount; col++) {
-        let verticalWord = "";
-        let verticalPositions = [];
-
-        for (let row = 0; row < rowCount; row++) {
-            const symbolNumber = reelResults[col][row];
-            const letter = symbolNumberToLetter(symbolNumber, symbolMapping);
-            verticalWord += letter;
-            verticalPositions.push({ reel: col, row: row });
-        }
-
-        // Check all possible subwords in this column (minimum 3 letters)
-        findValidSubwords(verticalWord, verticalPositions, words, symbolMapping, reelResults);
-    }
-
-    return words;
+    // Use the game's actual findWords function from wordFinder.js
+    return gameFinderWords(reelResults, symbolMapping);
 }
 
 // Helper function to find all valid subwords in a string
 function findValidSubwords(word, positions, results, symbolMapping, reelResults) {
-    // Try all possible subwords of length 3 or more
-    for (let start = 0; start <= word.length - 3; start++) {
-        for (let len = 3; len <= word.length - start; len++) {
+    // Try all possible subwords of length MIN_WIN_LENGTH or more
+    for (let start = 0; start <= word.length - MIN_WIN_LENGTH; start++) {
+        for (let len = MIN_WIN_LENGTH; len <= word.length - start; len++) {
             const subword = word.substring(start, start + len);
 
             // Skip words with a length that has a multiplier of 0
@@ -323,8 +367,8 @@ function findValidSubwords(word, positions, results, symbolMapping, reelResults)
                 continue;
             }
 
-            // Check if this is a valid word using our mock isValidWord function
-            if (mockIsValidWord(subword)) {
+            // Check if this is a valid word using the REAL isValidWord function from the game
+            if (isValidWord(subword)) {
                 // Calculate the value of the word
                 let wordValue = 0;
                 let wordPositions = [];
@@ -372,26 +416,8 @@ function wordsToPaylines(words) {
     });
 }
 
-// Mock implementation of isValidWord for the simulator
-// In a real implementation, we'd load the dictionary, but for simulation purposes,
-// we'll use a simplified version that considers common English words valid
-function mockIsValidWord(word) {
-    // For simulation purposes, consider words of length 3 or more as valid
-    // with higher probability for shorter words to simulate realistic outcomes
-    if (word.length < 3) return false;
-
-    // The longer the word, the less likely it is to be valid (for simulation)
-    const baseProb = 0.2; // Base probability for a 3-letter word
-    const probability = baseProb * Math.pow(0.9, word.length - 3);
-
-    // Add special cases for common 3-letter words
-    const commonThreeLetterWords = new Set(['THE', 'AND', 'FOR', 'BUT', 'NOT', 'YOU', 'ALL', 'ANY', 'CAN', 'HAD', 'HAS', 'HER', 'HIM', 'HIS', 'HOW', 'MAN', 'NEW', 'NOW', 'OLD', 'OUR', 'OUT', 'SEE', 'TWO', 'WAY', 'WHO', 'BOY', 'DAY', 'EYE', 'FAR', 'GOT', 'GET', 'LET', 'OFF', 'PUT', 'SAY', 'TOO', 'USE', 'YES', 'YET', 'CAT', 'DOG', 'RUN', 'SIT', 'TOP', 'END']);
-    if (word.length === 3 && commonThreeLetterWords.has(word.toUpperCase())) {
-        return true;
-    }
-
-    return Math.random() < probability;
-}
+// Use the findWordsInGrid as a wrapper around the game's real findWords function
+// This ensures we're using the exact same word validation as the actual game
 
 // Export the simulator function
 export { simulateRTP };

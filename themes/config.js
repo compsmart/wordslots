@@ -1,55 +1,87 @@
-// Reels for Scrabble Slots - Each reel has 30 positions with letter symbols (0-25 for A-Z)
-// Distribution based on Scrabble letter frequency
-export const reelStrips = [
-    // Reel 1 - Vowel heavy with common consonants
-    [0, 4, 8, 14, 17, 0, 19, 14, 0, 11, 8, 19, 7, 4, 17, 0, 4, 12, 13, 14, 15, 18, 19, 0, 4, 8, 14, 20, 4, 5],
-    // Reel 2 - Balanced with common letters
-    [1, 0, 4, 8, 14, 17, 19, 4, 13, 14, 15, 18, 19, 1, 3, 4, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 0, 8, 14, 20],
-    // Reel 3 - Mix of vowels and consonants
-    [2, 0, 4, 8, 14, 17, 19, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 0, 5, 9, 14, 21, 25, 0, 5, 15, 20],
-    // Reel 4 - Balanced with common letters
-    [3, 0, 4, 8, 14, 17, 19, 4, 13, 14, 15, 18, 19, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 0, 8, 14, 20, 3],
-    // Reel 5 - Consonant heavy with some vowels
-    [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 0, 4, 8, 14, 17, 19, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-];
+// filepath: c:\projects\copilot-agent\scrabble-game\themes\config.js
+// Configuration for Scrabble Slots
+// Now uses centralized symbol definitions from symbols.js
 
-// --- Letter Symbol Configurations ---
-// Maps symbol number (0-25) to its letter and value (based on Scrabble scoring)
-export const symbolNumberMultipliers = {
-    0: { letter: "A", value: 1 },
-    1: { letter: "B", value: 3 },
-    2: { letter: "C", value: 3 },
-    3: { letter: "D", value: 2 },
-    4: { letter: "E", value: 1 },
-    5: { letter: "F", value: 4 },
-    6: { letter: "G", value: 2 },
-    7: { letter: "H", value: 4 },
-    8: { letter: "I", value: 1 },
-    9: { letter: "J", value: 8 },
-    10: { letter: "K", value: 5 },
-    11: { letter: "L", value: 1 },
-    12: { letter: "M", value: 3 },
-    13: { letter: "N", value: 1 },
-    14: { letter: "O", value: 1 },
-    15: { letter: "P", value: 3 },
-    16: { letter: "Q", value: 10 },
-    17: { letter: "R", value: 1 },
-    18: { letter: "S", value: 1 },
-    19: { letter: "T", value: 1 },
-    20: { letter: "U", value: 1 },
-    21: { letter: "V", value: 4 },
-    22: { letter: "W", value: 4 },
-    23: { letter: "X", value: 8 },
-    24: { letter: "Y", value: 4 },
-    25: { letter: "Z", value: 10 }
-};
+import { generateSymbolNumberMultipliers } from './symbols.js';
+
+// Get symbol multipliers from the centralized definition
+export const symbolNumberMultipliers = generateSymbolNumberMultipliers();
+
+// Use optimized reel strips with special symbols
+// Each symbol number corresponds to:
+// 0-25: Regular letters A-Z (0=A, 1=B, 2=C, etc.)
+// 26-51: DL (Double Letter) versions of A-Z VOWELS: 26,30,34,46,40
+// 52-77: TL (Triple Letter) versions of A-Z VOWELS: 52,56,60,72,66
+// 78-103: DW (Double Word) versions of A-Z VOWELS: 78,82,86,98,92
+// 104-129: TW (Triple Word) versions of A-Z VOWELS: 104,108,112,124,118
+const regularLetters = [
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+]
+const specialLetters = [
+    27, 28, 29, 31, 32, 33, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51,
+    53, 54, 55, 57, 58, 59, 61, 62, 63, 64, 65, 67, 68, 69, 70, 71, 73, 74, 75, 76, 77,
+    79, 80, 81, 83, 84, 85, 87, 88, 89, 90, 91, 93, 94, 95, 96, 97, 99,
+    100, 101, 102, 103, 105, 106, 107, 109, 110, 111, 113, 114, 115, 116, 117,
+    119, 120, 121, 122, 123, 125, 126, 127, 128, 129
+]
+
+export const reelStrips = [
+    // Reel 1 - Consonant heavy with some DL special tiles
+    [
+        // Regular consonants (appear multiple times)
+        ...regularLetters,
+        //26-130 - special tiles (vowels removed)
+        ...specialLetters
+    ],
+    // Reel 2 - Balanced with some TL special tiles
+    [
+        // Regular consonants (appear multiple times)
+        ...regularLetters,
+        //26-130 - special tiles
+        ...specialLetters
+    ],
+
+    // Reel 3 - Mix with some DW special tiles
+    [
+        // Regular consonants (appear multiple times)
+        ...regularLetters,
+        //26-130 - special tiles
+        ...specialLetters
+
+    ],
+
+    // Reel 4 - Balanced with mixed specials
+    [
+        // Regular consonants (appear multiple times)
+        ...regularLetters,
+        //26-130 - special tiles
+        ...specialLetters
+
+    ],
+
+    // Reel 5 - Consonant heavy with some TW special tiles
+    [
+        // Regular consonants (appear multiple times)
+        ...regularLetters,
+        //26-130 - special tiles
+        ...specialLetters
+    ]
+];
 
 // --- Word Length Multiplier Rules ---
 // Adjusts the base multiplier based on word length
 export const PAYOUT_RULES = {
-    3: 0.01,
-    4: 0.01,
-    5: 0.1
+    3: 0.1, // 3-letter word multiplier
+    4: 0.1, // 4-letter word multiplier
+    5: 10,  // 5-letter word multiplierer
 };
 
 // For Scrabble Slots, instead of predefined paylines, we'll be looking for words
@@ -83,6 +115,7 @@ export const PAYLINES = [
 // --- Minimum win length (minimum word length) ---
 export const MIN_WIN_LENGTH = 3; // Words must be at least 3 letters long
 
+// Theme-specific configuration
 export const themeSpecific = {
     epicWinAnimation: {
         enabled: true,
@@ -93,7 +126,7 @@ export const themeSpecific = {
         dictionaryFlip: true
     },
     letterEffects: {
-        enabled: false,
+        enabled: true,
         tileColor: '#e8d0aa', // Light wooden color
         letterColor: '#333333', // Dark text
         borderColor: '#9e7e4f', // Darker wood border
@@ -101,7 +134,7 @@ export const themeSpecific = {
         tileSize: 80 // Size of the letter tiles
     },
     boardStyle: {
-        enabled: false,
+        enabled: true,
         backgroundColor: '#2e7d32', // Classic Scrabble board green
         gridColor: '#255c28', // Darker green for grid lines
         bonusColors: {
@@ -112,7 +145,7 @@ export const themeSpecific = {
         }
     },
     wordAnimation: {
-        enabled: false,
+        enabled: true,
         glowColor: '#ffdf00', // Gold
         intensity: 0.8,
         pulseSpeed: 1500,

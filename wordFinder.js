@@ -33,10 +33,19 @@ export function isValidWord(word) {
 }
 
 // Convert symbol numbers to letters using the symbolNumberMultipliers mapping
+// Now supports extended symbol numbers for special tiles (DL, TL, DW, TW)
 export function symbolNumberToLetter(symbolNumber, symbolMapping) {
     if (symbolMapping && symbolMapping[symbolNumber] && symbolMapping[symbolNumber].letter) {
         return symbolMapping[symbolNumber].letter;
     }
+
+    // Handle extended symbol numbers (get base letter)
+    if (symbolNumber >= 26) {
+        // Calculate the base letter index (0-25)
+        const baseLetterIndex = symbolNumber % 26;
+        return String.fromCharCode(65 + baseLetterIndex); // ASCII 'A' is 65
+    }
+
     // Fallback to direct mapping (0=A, 1=B, etc.)
     return String.fromCharCode(65 + symbolNumber); // ASCII 'A' is 65
 }

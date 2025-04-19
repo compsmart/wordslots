@@ -168,12 +168,10 @@
 
                 // Also print to original console
                 originalLog.apply(console, args);
-            };
-
-            // Run the simulation
-            setTimeout(() => {
+            };            // Run the simulation
+            setTimeout(async () => {
                 try {
-                    simulateRTP(settings);
+                    await simulateRTP(settings);
                 } catch (error) {
                     console.log('Error during simulation:', error.message);
                 }
